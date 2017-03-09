@@ -1165,44 +1165,22 @@ void Mesh::AutoSupports()
 			table.insert(he->Next());
 			table.insert(he->Next()->Next());	
 	}
-	HEdgeList haldEdges = table.list();
-	bool *boundary = new bool[haldEdges.size()];
-	for(int i=0;i<haldEdges.size();i++) boundary[i] = false;
-	DisjointSet ds(hface.size());
-	// delete after
-	for(int i=0;i<hface.size();i++)
-	{
-		HEdge *he = hface[i]->HalfEdge();
-		HEdge *start = he;
-		while(he->Next()!=he)
-		{
-			if(table.find(he->Twin()))
-				for(int j=0;j<hface.size();j++)
-				{
-					if(i==j) continue;
-					HEdge *hee = hface[j]->HalfEdge();
-					if(	hee==he->Twin() ||
-						hee->Next()==he->Twin()||
-						hee->Next()->Next()==he->Twin())
-						{
-							ds.Union(ds.Find(i),ds.Find(j));
-							break;
-						}
-				}
-			else he->Twin() is a boundary
-			he = he->Next();
-		}
-	}
-	Supports **s = new Supports*[hface.size()];
-	for(int i=0;i<hface.size();i++)
-	{
-		if(i==ds.Find(i)) s[i] = new Supports();
-		else s[i] = NULL;
-	}
-	for(int i=0;i<hface.size();i++)
-		s[ds.Find(i)]->addFace(hface[i]);
-	
 
+	HEdgeList halfEdges = table.list();
+	bool *boundary = new bool[halfEdges.size()];
+	for(int i=0;i<halfEdges.size();i++) boundary[i] = false;
+	DisjointSet ds(hface.size());
+	for(int i=0;i<halfEdges.size();i++)
+	{
+		if(!table.find(halfEdges[i]->Twin())) boundary[i] = true;
+		for(int j=0;j<halfEdges.size();j++)
+		{
+			if(i==j) continue;
+			if(halfEdges[i]->Twin()==halfEdges[j]) ds.Union(ds.Find(i),ds.Find(j));
+		}
+	}	
+	std::vector<int> types = ds.Types();
+	for(int i=0;i<types.size();i++) std::cout << types[i] << ' ';
 	// split hanging vertex
 	
 }

@@ -54,10 +54,22 @@ void DisjointSet::Display()const
     }
     cout << endl;
 }
-int DisjointSet::RootSize()const
+std::vector<int> DisjointSet::Types()
 {
-	int cnt=0;
+	std::vector<int> types;
 	for(int i=0;i<size;i++)
-		if(parent[i]<0)cnt++;
-	return cnt;
+		if(parent[i]<0) types.push_back(i);
+	std::vector<int> res(size);
+	for(int i=0;i<size;i++)
+	{
+		int p = Find(i);
+		for(int j=0;j<types.size();j++)
+			if(p==types[j])
+			{
+				p = j;
+				break;
+			}
+		res[i] = p;
+	}
+	return res;
 }

@@ -1,6 +1,6 @@
 #ifndef DISJOINTSET_H_INCLUDED
 #define DISJOINTSET_H_INCLUDED
-
+#include <vector>
 class DisjointSet{
 private:
     int size;
@@ -12,7 +12,7 @@ public:
     int Find(int x);
     int Find2(int x);
     void Display()const;
-    int RootSize()const;
+    std::vector<int> Types();
 };
 
 

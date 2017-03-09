@@ -122,14 +122,14 @@ template<class Type>
 void closeHashTable<Type>::autoRehash()
 {
     if(deleteSize>maxDeleteSize) {
-        std::cout << "rehash()被调用，此时 有效数据："<<dataSize<<",无效数据："<<deleteSize<<std::endl;
+        //std::cout << "rehash()被调用，此时 有效数据："<<dataSize<<",无效数据："<<deleteSize<<std::endl;
         rehash();
     }
 }
 template<class Type>
 void closeHashTable<Type>::doubleSpace()
 {
-    std::cout << "doubleSpace()被调用，此时 有效数据："<<dataSize<<",容量："<<size<<std::endl;
+    //std::cout << "doubleSpace()被调用，此时 有效数据："<<dataSize<<",容量："<<size<<std::endl;
     node* tmp = array;
     array = new node[2*size];
     dataSize =0;

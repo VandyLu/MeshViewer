@@ -1086,6 +1086,7 @@ int main(int argc, char **argv) {
 	s.setCube(c);
 	s.generate();
 	*/
+	mesh1.AutoSupports();
 	glutMainLoop();
 	return 0;
 }
