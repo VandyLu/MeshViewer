@@ -1,5 +1,7 @@
 #include "../include/mesh.h"
 #include "../include/meshmatrix.h"
+#include "../include/closeHashTable.h"
+#include "../include/DisjointSet.h"
 #include <cstring>
 #include <iostream>
 #include <strstream>
@@ -896,7 +898,7 @@ void Mesh::MarkCurvPoints(int threshold)
 				if(!curEdge->LeftFace()->isInBlock())
 				{
 					curEdge->LeftFace()->setInBlock(true);
-					feat.pushFace(curEdge->LeftFace());
+					feat.pushface(curEdge->LeftFace());
 				}
 				selected++;
 				curEdge = curEdge->Twin()->Next();
@@ -1137,4 +1139,84 @@ bool Mesh::SaveObjFile(const char * filename)const
 
 	fout.close();
 	return true;
+}
+int hashKey(HEdge* const&he)
+{
+	int * p = (int*)he;
+	return *p;	
+}
+void Mesh::AutoSupports()
+{
+	FaceList hface;
+	ComputeFaceNormals();
+	for(int i=0;i<fList.size();i++)
+	{
+		Vector3d n = fList[i]->Normal_f();
+		n /= n.L2Norm();
+		double cosa = n.Dot(Vector3d(0.0,0.0,-1.0));
+		if(cosa > 0.866)hface.push_back(fList[i]);
+	}
+	// merge areas
+	closeHashTable<HEdge*> table(hface.size()*3,hface.size(),hashKey);
+	for(int i=0;i<hface.size();i++)
+	{
+		HEdge *he = hface[i]->HalfEdge();
+			table.insert(he);
+			table.insert(he->Next());
+			table.insert(he->Next()->Next());	
+	}
+	HEdgeList haldEdges = table.list();
+	bool *boundary = new bool[haldEdges.size()];
+	for(int i=0;i<haldEdges.size();i++) boundary[i] = false;
+	DisjointSet ds(hface.size());
+	// delete after
+	for(int i=0;i<hface.size();i++)
+	{
+		HEdge *he = hface[i]->HalfEdge();
+		HEdge *start = he;
+		while(he->Next()!=he)
+		{
+			if(table.find(he->Twin()))
+				for(int j=0;j<hface.size();j++)
+				{
+					if(i==j) continue;
+					HEdge *hee = hface[j]->HalfEdge();
+					if(	hee==he->Twin() ||
+						hee->Next()==he->Twin()||
+						hee->Next()->Next()==he->Twin())
+						{
+							ds.Union(ds.Find(i),ds.Find(j));
+							break;
+						}
+				}
+			else he->Twin() is a boundary
+			he = he->Next();
+		}
+	}
+	Supports **s = new Supports*[hface.size()];
+	for(int i=0;i<hface.size();i++)
+	{
+		if(i==ds.Find(i)) s[i] = new Supports();
+		else s[i] = NULL;
+	}
+	for(int i=0;i<hface.size();i++)
+		s[ds.Find(i)]->addFace(hface[i]);
+	
+
+	// split hanging vertex
+	
+}
+
+
+double Supports::dist(const Vector3d &v)const
+{
+	return (center-v).L2Norm();
+}
+void Supports::addVertex(Vertex* v)
+{
+	vList.push_back(v);
+}
+void Supports::addFace(Face* f)
+{
+	
 }

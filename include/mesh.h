@@ -16,6 +16,7 @@ class Drain;
 class OneRingHEdge;
 class OneRingVertex;
 class FaceEnumeration;
+class Supports;
 
 
 #define MIN_CURVATURE 3
@@ -289,6 +290,7 @@ public:
 
 
 ////////// class Mesh //////////
+
 class Mesh {
 	friend class Matcher;
 public:
@@ -311,7 +313,7 @@ public:
 	// you DO NOT need to understand and use them
 	void AddVertex(Vertex *v) { vList.push_back(v); }
 	void AddFace(int v1, int v2, int v3);
-   
+   	
 	void Clear() {
 
 		//cout<< "CANNOT USE THE ORIGINAL CODE IF WE NEED TO GUARANTEE CONSTANT TIME DELETIONG OPERATION (MORE PRECISELY, IN TIME PROPORTIONAL TO THE DEGREE OF THE SELECTED VERTEX"<<endl;
@@ -365,6 +367,7 @@ public:
 	void Flip();
 	//void ComputeSS(); //20110816
 	void Noise(double max);
+	void AutoSupports();
 	
 
 	/************************************************************************/
@@ -383,5 +386,27 @@ public:
 inline void SetPrevNext(HEdge *e1, HEdge *e2) { e1->SetNext(e2); e2->SetPrev(e1); }
 inline void SetTwin(HEdge *e1, HEdge *e2) { e1->SetTwin(e2); e2->SetTwin(e1); }
 inline void SetFace(Face *f, HEdge *e) { f->SetHalfEdge(e); e->SetFace(f); }
+
+class Supports{
+private:
+	Vector3d center;
+	struct node{
+		HEdge* data;
+		node* next;
+		node(HEdge*he=NULL,node* n=NULL){data=he;next=n;}
+	};
+	node* start;
+public:
+	Supports(){ start=NULL;}
+	~Supports(){}
+
+	VertexList vList;
+	FaceList fList;
+	const VertexList Vertices()const{ return vList;}
+	void addVertex(Vertex* v);
+	void addFace(Face *f);
+	double dist(const Vector3d &v)const;
+};
+
 
 #endif // __MESH_H__
