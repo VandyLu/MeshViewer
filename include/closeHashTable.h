@@ -42,7 +42,6 @@ public:
     std::vector<Type> list()const;
 };
 
-
 template<class Type>
 closeHashTable<Type>::closeHashTable(int length,int _maxDeleteSize,int(*f)(const Type&x))
 {

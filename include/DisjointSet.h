@@ -12,7 +12,7 @@ public:
     int Find(int x);
     int Find2(int x);
     void Display()const;
-    std::vector<int> Types();
+    std::vector<int> Types(int &n);
 };
 
 

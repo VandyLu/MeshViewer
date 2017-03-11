@@ -50,6 +50,7 @@ private:
 	bool flag;	  
 
 public:
+	bool supportBoundary;
 	/////////////////////////////////////
 	// constructor
 	double dist;// for marking the propagation distance
@@ -242,10 +243,12 @@ public:
 class Face {
 private:
 	HEdge * he;
-    bool valid;
+    	bool valid;
 	bool inBlock;
 	Vector3d normal_f;//1007
+	
 public:
+	int index;
 	// constructor
 	Face() : he(NULL), valid(true),inBlock(false) { }
 	void ComptuteNormal_f()
@@ -407,6 +410,7 @@ public:
 	void addFace(Face *f);
 	double dist(const Vector3d &v)const;
 };
+
 
 
 #endif // __MESH_H__

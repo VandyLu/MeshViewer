@@ -10,6 +10,9 @@
 #include <float.h>
 #include <queue>
 #include <stack>
+#include <map>
+#include <set>
+#include <utility>
 using namespace std;
 
 /////////////////////////////////////////
@@ -181,7 +184,7 @@ void Mesh::DisplayMeshInfo()
 	int NO_VERTICES = (int)vList.size();
 	int NO_FACES = (int)fList.size();
 	int NO_HEDGES = (int)heList.size()+(int)bheList.size();
-	int NO_B_LOOPS = CountBoundaryLoops();
+	int NO_B_LOOPS = 1;//CountBoundaryLoops();
 	//int NO_COMPONENTS = CountConnectedComponents();
 	int NO_COMPONENTS = 0;
 	int NO_GENUS = NO_COMPONENTS - (NO_VERTICES - NO_HEDGES/2 +  NO_FACES + NO_B_LOOPS)/2;
@@ -262,7 +265,7 @@ void Mesh::ComputeVertexNormals()
 
        HEdge *cur=vList[i]->HalfEdge();
        HEdge *nex=cur;
-	   while(nex && nex->Prev()->Twin()!=cur) 
+	   while(nex && nex->Next()->Twin()!=cur) 
 	   {
 		 if(nex && !nex->IsBoundary())//exclude the holes formed by boundary loops
 		 {		 
@@ -273,7 +276,7 @@ void Mesh::ComputeVertexNormals()
 		   v_A_1 = Area(pos1, pos2, pos3);
            v_normal = v_normal + v_A_1*nex->LeftFace()->Normal_f();//SUM
 		 }
-		 nex = nex->Prev()->Twin();	  
+		 nex = nex->Next()->Twin();	  
 	   }
        
        //process the last nex
@@ -1145,44 +1148,61 @@ int hashKey(HEdge* const&he)
 	int * p = (int*)he;
 	return *p;	
 }
+struct Rect{
+	double x1,x2,y1,y2;
+	Rect(double _x1,double _x2,double _y1,double _y2):x1(_x1),x2(_x2),y1(_y1),y2(_y2){}
+	bool inRect(double x,double y) { return (x>x1 && x<x2 && y>y1 && y<y2);}
+};
+
 void Mesh::AutoSupports()
 {
 	FaceList hface;
 	ComputeFaceNormals();
+	int index = 0;
 	for(int i=0;i<fList.size();i++)
 	{
 		Vector3d n = fList[i]->Normal_f();
 		n /= n.L2Norm();
 		double cosa = n.Dot(Vector3d(0.0,0.0,-1.0));
-		if(cosa > 0.866)hface.push_back(fList[i]);
+		if(cosa > 0.866)
+		{
+			fList[i]->index = index; index++;
+			hface.push_back(fList[i]);
+		}
 	}
 	// merge areas
-	closeHashTable<HEdge*> table(hface.size()*3,hface.size(),hashKey);
+	set<HEdge*> heSet;
 	for(int i=0;i<hface.size();i++)
 	{
 		HEdge *he = hface[i]->HalfEdge();
-			table.insert(he);
-			table.insert(he->Next());
-			table.insert(he->Next()->Next());	
+			heSet.insert(he);
+			heSet.insert(he->Next());
+			heSet.insert(he->Next()->Next());	
 	}
-
-	HEdgeList halfEdges = table.list();
-	bool *boundary = new bool[halfEdges.size()];
-	for(int i=0;i<halfEdges.size();i++) boundary[i] = false;
 	DisjointSet ds(hface.size());
-	for(int i=0;i<halfEdges.size();i++)
+
+	for(set<HEdge*>::iterator he=heSet.begin();he != heSet.end();++he)
 	{
-		if(!table.find(halfEdges[i]->Twin())) boundary[i] = true;
-		for(int j=0;j<halfEdges.size();j++)
-		{
-			if(i==j) continue;
-			if(halfEdges[i]->Twin()==halfEdges[j]) ds.Union(ds.Find(i),ds.Find(j));
-		}
+		if((*he)->Twin()!=NULL && heSet.find((*he)->Twin())!=heSet.end() ) {
+				(*he)->supportBoundary = false;
+				ds.Union(ds.Find((*he)->LeftFace()->index),ds.Find((*he)->Twin()->LeftFace()->index));
+		}else (*he)->supportBoundary = true;
 	}	
-	std::vector<int> types = ds.Types();
-	for(int i=0;i<types.size();i++) std::cout << types[i] << ' ';
-	// split hanging vertex
+	int nGroup;
+	std::vector<int> faceGroup = ds.Types(nGroup);  //class of fhace
 	
+	std::vector<Vector3d> colors;
+	for(int i=0;i<nGroup;i++)
+   		colors.push_back(Vector3d((double)rand()/RAND_MAX,(double)rand()/RAND_MAX,(double)rand()/RAND_MAX));
+	for(int i=0;i<faceGroup.size();i++)
+	{
+		HEdge *he = hface[i]->HalfEdge();
+		Vector3d color = colors[faceGroup[i]];
+		he->Start()->SetColor(color);
+		he->End()->SetColor(color);
+		he->Prev()->Start()->SetColor(color);
+	}
+	 //split hanging vertex
 }
 
 

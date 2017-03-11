@@ -23,9 +23,9 @@ $(TARGET):$(OBJ)
 	@mkdir $(BIN_DIR) -p
 	$(CXX) $(GL_LIBS) $^ -o $@ $(GL_FLAGS)
 	@echo done
-$(OBJ):$(OBJ_DIR)%.o:$(SRC_DIR)%.cpp
+$(OBJ):$(OBJ_DIR)%.o:$(SRC_DIR)%.cpp $(HEADER)
 	@mkdir $(OBJ_DIR) -p
-	$(CXX) -c $< -o $@ $(HEADER_DIR)
+	$(CXX) -g -c $< -o $@ $(HEADER_DIR)
 .PHONY:clean
 clean:
 	rm -rf $(TARGET) $(OBJ)

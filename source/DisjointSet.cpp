@@ -54,11 +54,12 @@ void DisjointSet::Display()const
     }
     cout << endl;
 }
-std::vector<int> DisjointSet::Types()
+std::vector<int> DisjointSet::Types(int& n)
 {
 	std::vector<int> types;
 	for(int i=0;i<size;i++)
 		if(parent[i]<0) types.push_back(i);
+	n = types.size();
 	std::vector<int> res(size);
 	for(int i=0;i<size;i++)
 	{

@@ -768,7 +768,12 @@ void KeyboardFunc(unsigned char ch, int x, int y) {
 	case 't':
 		mesh1.Move(Vector3d(0.1,0.1,0.1));
 		break;
+	case 'p':
 
+		mesh1.ComputeFaceNormals();
+		mesh1.ComputeVertexNormals();
+		mesh1.AutoSupports();
+		break;
 	case 'j':
 		
 		currentMode = Selection;
@@ -1086,7 +1091,6 @@ int main(int argc, char **argv) {
 	s.setCube(c);
 	s.generate();
 	*/
-	mesh1.AutoSupports();
 	glutMainLoop();
 	return 0;
 }
