@@ -1148,12 +1148,16 @@ int hashKey(HEdge* const&he)
 	int * p = (int*)he;
 	return *p;	
 }
-struct Rect{
-	double x1,x2,y1,y2;
-	Rect(double _x1,double _x2,double _y1,double _y2):x1(_x1),x2(_x2),y1(_y1),y2(_y2){}
-	bool inRect(double x,double y) { return (x>x1 && x<x2 && y>y1 && y<y2);}
-};
 
+struct line{
+	Vector3d norm;
+	Vector3d point;
+	line(const Vector3d&n,const Vector3d&pt):norm(n),pt(point){}
+	line(){}
+	bool cross(Face*f)const{
+		
+	}
+};
 void Mesh::AutoSupports()
 {
 	FaceList hface;
@@ -1202,7 +1206,8 @@ void Mesh::AutoSupports()
 		he->End()->SetColor(color);
 		he->Prev()->Start()->SetColor(color);
 	}
-	 //split hanging vertex
+	// get support points   however, random points are used for convenience
+	
 }
 
 
