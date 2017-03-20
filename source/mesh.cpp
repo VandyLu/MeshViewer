@@ -1152,12 +1152,107 @@ int hashKey(HEdge* const&he)
 struct line{
 	Vector3d norm;
 	Vector3d point;
-	line(const Vector3d&n,const Vector3d&pt):norm(n),pt(point){}
+	line(const Vector3d&n,const Vector3d&pt):norm(n),point(pt){}
 	line(){}
 	bool cross(Face*f)const{
 		
 	}
 };
+
+bool inCube(const Vector3d& pos,const Vector3d& inf,const Vector3d& pt)
+{
+	return ((pt.X()>pos.X()&& pt.X()<pos.X()+inf.X())? true:false);
+}
+bool inCube(const Vector3d& pos,const Vector3d& inf,Face* f)
+{
+	Vector3d pt1 = f->HalfEdge()->Start()->Position();
+	Vector3d pt2 = f->HalfEdge()->End()->Position();
+	Vector3d pt3 = f->HalfEdge()->Next()->End()->Position();
+	return inCube(pos,inf,pt1) || inCube(pos,inf,pt2) || inCube(pos,inf,pt3);
+}
+void minPos(Vector3d& pos,const Vector3d& pt)
+{
+	if(pos.X()>pt.X()) pos.X()=pt.X();
+	if(pos.Y()>pt.Y()) pos.Y()=pt.Y();
+	if(pos.Z()>pt.Z()) pos.Z()=pt.Z();
+}
+void maxPos(Vector3d& pos,const Vector3d& pt)
+{
+	if(pos.X()<pt.X()) pos.X()=pt.X();
+	if(pos.Y()<pt.Y()) pos.Y()=pt.Y();
+	if(pos.Z()<pt.Z()) pos.Z()=pt.Z();
+}
+std::set<Vertex*> VerticesOfFaces(const FaceList& fList)
+{
+	VertexList vList;
+	std::set<Vertex*> vSet;
+	for(int i=0;i<fList.size();i++)
+	{
+		Face *f = fList[i];
+		Vertex* pt1 = f->HalfEdge()->Start();
+		Vertex* pt2 = f->HalfEdge()->End();
+		Vertex* pt3 = f->HalfEdge()->Next()->End();
+		vSet.insert(pt1);
+		vSet.insert(pt2);
+		vSet.insert(pt3);
+	}
+	return vSet;
+}
+/* pt*/
+bool crossMesh(const Vector3d& pt,const set<Vertex*> vSet)
+{
+	for(set<Vertex*>::iterator it = vSet.begin(); it != vSet.end();++it)
+	{
+		Vector3d n1 = (*it)->Position() - pt;
+		double dis = n1.L2Norm();
+	   	n1 /= dis;
+		Vector3d n2(0,0,-1.0);
+		if(n1.Dot(n2)<0.7 && dis<0.1) return true; 
+	}
+	return false;
+}
+#include "GL/glut.h"
+void drawCube(const Vector3d& min,const Vector3d&max)
+{
+	static const int index_list[][2] =   
+	{   
+		    {0, 1},      
+		    {1, 2},      
+		    {2, 3},      
+		    {3, 0},      
+		    {4, 5},      
+		    {5, 6},      
+		    {6, 7},      
+		    {7, 4},  
+		    {0, 4},  
+		    {1, 5},  
+		    {7, 3},  
+		    {2, 6}  
+	}; 
+	const float vertex_list[][3] =   
+	{   
+		min.X(),min.Y(),min.Z(),
+		min.X(),max.Y(),min.Z(),
+		max.X(),max.Y(),min.Z(),
+		max.X(),min.Y(),min.Z(),
+		min.X(),min.Y(),max.Z(),
+		min.X(),max.Y(),max.Z(),
+		max.X(),max.Y(),max.Z(),
+		max.X(),min.Y(),max.Z(),
+	};   	
+	glLineWidth(2);
+	glColor3d(1.0,0.0,0.0);
+	glBegin(GL_LINES);
+	for(int i=0;i<12;i++)
+	{
+			glVertex3fv(vertex_list[index_list[i][0]]);
+			glVertex3fv(vertex_list[index_list[i][1]]);
+	}
+	glEnd();
+}
+
+Vector3d cmin(1.0,1.0,1.0);
+Vector3d cmax(-1.0,-1.0,-1.0);
 void Mesh::AutoSupports()
 {
 	FaceList hface;
@@ -1194,7 +1289,8 @@ void Mesh::AutoSupports()
 	}	
 	int nGroup;
 	std::vector<int> faceGroup = ds.Types(nGroup);  //class of fhace
-	
+
+	// show the areas to be supported
 	std::vector<Vector3d> colors;
 	for(int i=0;i<nGroup;i++)
    		colors.push_back(Vector3d((double)rand()/RAND_MAX,(double)rand()/RAND_MAX,(double)rand()/RAND_MAX));
@@ -1207,9 +1303,72 @@ void Mesh::AutoSupports()
 		he->Prev()->Start()->SetColor(color);
 	}
 	// get support points   however, random points are used for convenience
+	/*********************** random points are select **************************/
+	std::vector<FaceList> supports;
+	for(int i=0;i<nGroup;i++) supports.push_back(FaceList());
+	for(int i=0;i<hface.size();i++)
+			supports[faceGroup[i]].push_back(hface[i]);
+
+	//std::cout << supports.size()<<std::endl;
+	
+	FaceList roi;
+	Vector3d pos,inf;
+	FaceList support = supports[0];
+	set<Vertex*> vSet = VerticesOfFaces(support);
+	cmin = Vector3d(1.0,1.0,1.0);
+	cmax = Vector3d(-1.0,-1.0,-1.0);
+
+	for(int i=0;i<support.size();i++)
+	{
+		Face *f = support[i];
+		Vector3d pt1 = f->HalfEdge()->Start()->Position();
+		Vector3d pt2 = f->HalfEdge()->End()->Position();
+		Vector3d pt3 = f->HalfEdge()->Next()->End()->Position();
+		maxPos(cmax,pt1);maxPos(cmax,pt2);maxPos(cmax,pt3);
+		minPos(cmin,pt1);minPos(cmin,pt2);minPos(cmin,pt3);
+	}
+	for(int i=0;i<fList.size();i++)
+			if(inCube(cmin,cmax-cmin,fList[i]))roi.push_back(fList[i]);
+	cout << "min:" << cmin << "max:"<< cmax<<endl;
+	// prepare points for kmeans algrithom
+	// judge if there are vertices below the handing vertices
+	/*
+	VertexList rawPoints;
+	set<Vertex*> vroi = VerticesOfFaces(roi);
+	
+	for(set<Vertex*>::iterator it = vSet.begin();it != vSet.end();++it)
+		if( !crossMesh((*it)->Position(),vroi) ) rawPoints.push_back(*it);
+	cout << rawPoints.size()<<endl;*/
+
+	/*********************** you should replace codes here**************************/
+}
+template<class Type>
+class supportTrees{
+		private:
+				struct node{
+				Type data;
+				int parent;
+				node(const Type& d,int p=-1):data(d),parent(p){}
+				};
+				node*array;
+		public:
+				supportTrees(vector<Type> data){
+					array = new node[data.size()];
+					for(int i=0;i<data.size();i++)
+							array[i] = node(data[i]);
+				}
+				~supportTrees(){delete[]array;}
+				int find(const Type& x){
+					if()
+					return 
+				}
+
+};
+VertexList kmeans(const VertexList& vList,supportTrees& tree)
+{
+	VertexList vList_new;
 	
 }
-
 
 double Supports::dist(const Vector3d &v)const
 {

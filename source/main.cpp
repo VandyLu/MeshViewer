@@ -203,6 +203,7 @@ void ReshapeFunc(int width, int height) {
 }
 
 // GLUT display callback function
+void drawCube(const Vector3d& min,const Vector3d& max);
 void DisplayFunc() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -225,7 +226,8 @@ void DisplayFunc() {
 	case DELETESELECTEDVERTEX: DeleteSelectedVertex(currSelectedVertex); break;
 	
 	}
-	
+	extern Vector3d cmin,cmax;
+	drawCube(cmin,cmax);
 	DrawSelectedVertices();
 
 	//ComputeSS();//20110817
